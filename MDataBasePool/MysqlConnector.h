@@ -8,7 +8,7 @@ public:
 	MysqlConnector();
 	~MysqlConnector();
 	//数据库链接的初始化
-	bool initConnect();
+	bool initConnect(string&& ip,string&& user,string&& passwd,string&& db,unsigned short&& port);
 	//增删改
 	/*bool deleteData();
 	bool updateData();
@@ -34,7 +34,7 @@ private:
 	//查询的结果集
 	MYSQL_RES* selectResult = nullptr;
 	//结果集的一行
-	MYSQL_ROW* resultRow = nullptr;
+	MYSQL_ROW resultRow = nullptr;
 
 };
 
