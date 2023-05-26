@@ -26,6 +26,10 @@ public:
 	bool commit();
 	//事务回滚
 	bool rollback();
+	//更新启动时间
+	void refrashTime();
+	//计算持续时间
+	long long getAliveTime();
 private:
 	//用于回收查询结果集的内存
 	void freeResult();
@@ -35,6 +39,6 @@ private:
 	MYSQL_RES* selectResult = nullptr;
 	//结果集的一行
 	MYSQL_ROW resultRow = nullptr;
-
+	
 };
 

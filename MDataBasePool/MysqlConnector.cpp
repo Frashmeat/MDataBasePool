@@ -4,8 +4,8 @@ MysqlConnector::MysqlConnector()
 {
 	//初始化一个链接
 	connect = mysql_init(nullptr);
-	//设置字符编码 防止乱码
-	mysql_set_character_set(connect, "utf8");
+	//设置字符编码 防止乱
+	
 }
 
 MysqlConnector::~MysqlConnector()
@@ -21,6 +21,7 @@ MysqlConnector::~MysqlConnector()
 bool MysqlConnector::initConnect(string&& ip, string&& user, string&& passwd, string&& db, unsigned short&& port)
 {
 	//建立链接
+	mysql_set_character_set(connect, "gbk");
 	connect = mysql_real_connect(connect, ip.c_str(), user.c_str(), passwd.c_str(), db.c_str(), port, nullptr, 0);
 
 	return connect!=nullptr;
@@ -64,7 +65,7 @@ string MysqlConnector::value(int index)
 {
 	int allRowCount = mysql_num_fields(selectResult);
 	if (index >= allRowCount || index < 0) {
-		return nullptr;
+		return string();
 	}
 	char* val = resultRow[index];
 	//返回当前行的 所有列的 数据的 长度的 集合
@@ -86,6 +87,11 @@ bool MysqlConnector::commit()
 bool MysqlConnector::rollback()
 {
 	return mysql_rollback(connect);
+}
+
+void MysqlConnector::refrashTime()
+{
+
 }
 
 
