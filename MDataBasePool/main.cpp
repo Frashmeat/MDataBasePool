@@ -39,14 +39,29 @@ int main() {
 		cout << v["ip"].asString() << endl;
 	}*/
 
-	//ConnectPool* cp = ConnectPool::getConnectionPool();
+	ConnectPool* cp = ConnectPool::getConnectionPool();
 	//auto connect = cp->getConnection();
-	//
-	//string sql = "select * from customer where id = 4";
-	//auto con = connect.get();
-	//con->selectData(sql);
-	//con->next();
-	//cout << con->value(1) << endl;
+	//auto connect2 = cp->getConnection();
+	//auto connect3 = cp->getConnection();
+	//auto connect4 = cp->getConnection();
+	//auto connect5 = cp->getConnection();
+	threadpool tp(10);
+	auto f1 = tp.commit(bind(&ConnectPool::getConnection,cp));
+	auto f2 = tp.commit(bind(&ConnectPool::getConnection,cp));
+	auto f3 = tp.commit(bind(&ConnectPool::getConnection,cp));
+	auto f4 = tp.commit(bind(&ConnectPool::getConnection,cp));
+	auto f5 = tp.commit(bind(&ConnectPool::getConnection,cp));
+
+	//this_thread::sleep_for(chrono::milliseconds(6000));
+	string sql = "select * from customer where id = 4";
+	auto con = f4.get().get();
+	auto con1 = f2.get().get();
+	con->selectData(sql);
+	con1->selectData(sql);
+	con->next();
+	con1->next();
+	cout << con->value(1) << endl;
+	cout << con1->value(1) << endl;
 
 
 

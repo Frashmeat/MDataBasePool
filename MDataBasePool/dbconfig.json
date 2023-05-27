@@ -4,7 +4,7 @@
     "passwd": "Ljk0068.",
     "db": "db2",
     "maxConnectCount": 20,
-    "minConnectCount": 5,
+    "minConnectCount": 2,
     "timeout": 1000,
     "maxIdleTime": 5000
 }

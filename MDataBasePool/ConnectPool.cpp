@@ -5,31 +5,39 @@ using namespace Json;
 
 ConnectPool* ConnectPool::getConnectionPool()
 {
+	//静态变量只会创建一次, 确保连接池的唯一性
 	static ConnectPool cp;
-
 	return &cp;
 }
-//
+
 shared_ptr<MysqlConnector> ConnectPool::getConnection()
 {
-	unique_lock<mutex> lock(this->lock);
+	unique_lock<mutex> lock(this->lock,defer_lock);
+	//当连接不够时,通知 生产 连接
 	while (connectPool.empty()) {
+		//如果无法在timeout 时间内生产连接 则直接return , 即无法生产 连接
+		produceConnect();
+		lock.lock();
 		if (cv_status::timeout == cv.wait_for(lock, chrono::milliseconds(timeout))) {
 			if (connectPool.empty()) {
 				cout << "can't create new connect\n";
 				return nullptr;
 			}
 		}
+		lock.unlock();
 	}
 
+	//从连接池队列中获取 连接 并指定 share_ptr的 析构操作,并不析构连接
+	lock.lock();
 	shared_ptr<MysqlConnector> conntion(connectPool.front(), [this](MysqlConnector* mc) {
 		lock_guard<mutex> lock(this->lock);
 		mc->refrashTime();
 		connectPool.push(mc);
 		});
+	connectPool.pop();
+	lock.unlock();
 	return conntion;
 }
-//
 ConnectPool::~ConnectPool()
 {
 	while (!connectPool.empty()) {
@@ -40,23 +48,12 @@ ConnectPool::~ConnectPool()
 
 
 }
-//
 ConnectPool::ConnectPool() {
-	//1.加载json文件
-	/*ip = "127.0.0.1";
-	user = "root";
-	passwd = "Ljk0068.";
-	db = "db2";
-	maxConnectCount = 20;
-	minConnectCount = 5;
-	timeout = 1000;
-	maxIdleTime = 5000;*/
+	//获取json数据,指定数据库的地址用户密码等等
 	if (!parseJsonFile()) {
 		cout << "json file doesn't load\n";
 		return;
 	}
-
-
 	//添加 数据库 链接
 	for (int i = 0; i < minConnectCount; i++)
 	{
@@ -80,21 +77,21 @@ bool ConnectPool::parseJsonFile()
 	Value v;
 	r.parse(ifs, v);
 	if (v.isObject()) {
-		ip = v["ip"].asString();
+		ip = move(v["ip"].asString());
 		cout << ip << endl;
-		user = v["user"].asString();
+		user = move(v["user"].asString());
 		cout << user << endl;
-		passwd = v["passwd"].asString();
+		passwd = move(v["passwd"].asString());
 		cout << passwd << endl;
-		db = v["db"].asString();
+		db = move(v["db"].asString());
 		cout << db << endl;
-		maxConnectCount = v["maxConnectCount"].asInt();
+		maxConnectCount = move(v["maxConnectCount"].asInt());
 		cout << maxConnectCount << endl;
-		minConnectCount = v["minConnectCount"].asInt();
+		minConnectCount = move(v["minConnectCount"].asInt());
 		cout << minConnectCount << endl;
-		timeout = v["timeout"].asInt();
+		timeout = move(v["timeout"].asInt());
 		cout << timeout << endl;
-		maxIdleTime = v["maxIdleTime"].asInt();
+		maxIdleTime = move(v["maxIdleTime"].asInt());
 		cout << maxIdleTime << endl;
 		return true;
 	}
@@ -122,29 +119,34 @@ bool ConnectPool::addConnection()
 //
 void ConnectPool::produceConnect()
 {
-	unique_lock<mutex> lock(this->lock);
-	while (true) {
-		cv.wait(lock, [=]() {
-			return connectPool.size() < minConnectCount;
-			});
-		addConnection();
-		cv.notify_all();
+	while (connectPool.size() < minConnectCount) {
+		{
+			unique_lock<mutex> lock(this->lock);
+			addConnection();
+			cv.notify_all();
+		}
 	}
 }
 //
 void ConnectPool::recycleConnect()
 {
 	while (true) {
-		this_thread::sleep_for(chrono::seconds(1));
-		lock_guard<mutex> lock(this->lock);
-		while (connectPool.size() > minConnectCount) {
-			auto tempConnect =  connectPool.front();
-			if (tempConnect->getAliveTime() >= maxIdleTime) {
-				connectPool.pop();
-				delete tempConnect;
+		//cout << "done check\n";
+		this_thread::sleep_for(chrono::milliseconds(1000));
+		{
+			lock_guard<mutex> lock(this->lock);
+			while (connectPool.size() < minConnectCount) {
+				if (!connectPool.empty()) {
+					auto tempConnect = connectPool.front();
+					if (tempConnect->getAliveTime() >= maxIdleTime) {
+						cout << tempConnect->getAliveTime() << endl;
+						connectPool.pop();
+						delete tempConnect;
+					}
+					else
+						break;
+				}
 			}
-			else
-				break;
 		}
 	}
 }
