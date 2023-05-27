@@ -2,21 +2,30 @@
 #include<iostream>
 #include<queue>
 #include<mutex>
+
 #include"MysqlConnector.h"
 using namespace std;
-class ConnectPool
+class __declspec(dllexport) ConnectPool
 {
 public:
-	ConnectPool();
+	static ConnectPool* getConnectionPool();
+	shared_ptr<MysqlConnector> getConnection();
+	ConnectPool(const ConnectPool& obj) = delete;
+	ConnectPool& operator=(const ConnectPool& obj) = delete;
 	~ConnectPool();
 private:
+	ConnectPool();
+	bool parseJsonFile();
+	bool addConnection();
+	void produceConnect();
+	void recycleConnect();
 	string ip;
 	string user;
 	string passwd;
 	string db;
 	unsigned short port;
 	//连接池
-	queue<MysqlConnector> connectPool;
+	queue<MysqlConnector*> connectPool;
 	//互斥锁
 	mutex lock;
 	//条件变量

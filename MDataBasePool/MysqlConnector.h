@@ -1,8 +1,10 @@
 #pragma once
 #include <string>
+#include <chrono>
 #include "mysql.h"
 using namespace std;
-class MysqlConnector
+
+class __declspec(dllexport) MysqlConnector
 {
 public:
 	MysqlConnector();
@@ -39,6 +41,6 @@ private:
 	MYSQL_RES* selectResult = nullptr;
 	//结果集的一行
 	MYSQL_ROW resultRow = nullptr;
-	
+	std::chrono::steady_clock::time_point startActiveTime;
 };
 

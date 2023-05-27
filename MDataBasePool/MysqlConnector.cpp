@@ -91,7 +91,14 @@ bool MysqlConnector::rollback()
 
 void MysqlConnector::refrashTime()
 {
+	startActiveTime = chrono::steady_clock::now();
+}
 
+long long MysqlConnector::getAliveTime()
+{
+	auto res = chrono::steady_clock::now() - startActiveTime;
+	auto duration = chrono::duration_cast<chrono::milliseconds>(res);
+	return duration.count();
 }
 
 

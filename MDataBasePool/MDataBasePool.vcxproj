@@ -40,7 +40,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -139,6 +139,9 @@
   <ItemGroup>
     <ClInclude Include="ConnectPool.h" />
     <ClInclude Include="MysqlConnector.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="dbconfig.json" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
